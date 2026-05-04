@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<VBox spacing="14" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.toga.controller.PenggunaController"
+      styleClass="page-container">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+    <Label text="Kelola Pengguna" styleClass="page-title"/>
+
+    <!-- FORM -->
+    <VBox styleClass="card" spacing="10">
+        <Label text="Form Pengguna" styleClass="section-title"/>
+        <GridPane hgap="12" vgap="10">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="50"/>
+                <ColumnConstraints percentWidth="50"/>
+            </columnConstraints>
+
+            <Label text="Nama" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label"/>
+            <TextField fx:id="tfNama" promptText="Nama lengkap anggota"
+                       GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+
+            <Label text="Alamat" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="form-label"/>
+            <TextField fx:id="tfAlamat" promptText="Alamat lengkap"
+                       GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        </GridPane>
+    </VBox>
+
+    <!-- BUTTONS -->
+    <HBox spacing="10">
+        <Button text="Tambah" onAction="#handleTambah" styleClass="btn-primary"/>
+        <Button text="Ubah"   onAction="#handleUbah"   styleClass="btn-secondary"/>
+        <Button text="Hapus"  onAction="#handleHapus"  styleClass="btn-danger"/>
+    </HBox>
+
+    <!-- TABLE -->
+    <TableView fx:id="tblPengguna" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colNama"   text="Nama"   prefWidth="220"/>
+            <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="400"/>
+        </columns>
+    </TableView>
+
+</VBox>

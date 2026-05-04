@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<ScrollPane fitToWidth="true" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.toga.controller.LaporanController"
+            styleClass="scroll-pane">
+    <VBox spacing="14" styleClass="page-container">
+        <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+        <Label text="Laporan" styleClass="page-title"/>
+
+        <!-- FILTER -->
+        <VBox styleClass="card" spacing="10">
+            <Label text="Filter Periode" styleClass="section-title"/>
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <VBox spacing="4">
+                    <Label text="Dari Tanggal" styleClass="form-label"/>
+                    <DatePicker fx:id="dpDari"/>
+                </VBox>
+                <VBox spacing="4">
+                    <Label text="Sampai Tanggal" styleClass="form-label"/>
+                    <DatePicker fx:id="dpSampai"/>
+                </VBox>
+                <VBox alignment="BOTTOM_LEFT">
+                    <Button text="Tampilkan" onAction="#handleTampilkan" styleClass="btn-primary"/>
+                </VBox>
+            </HBox>
+        </VBox>
+
+        <!-- SUMMARY CARDS -->
+        <HBox spacing="12">
+            <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                <Label text="Total Panen" styleClass="stat-label"/>
+                <Label fx:id="lblTotalPanen" text="0" styleClass="stat-value"/>
+                <Label text="periode ini" styleClass="stat-sub"/>
+            </VBox>
+            <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                <Label text="Total Perawatan" styleClass="stat-label"/>
+                <Label fx:id="lblTotalPerawatan" text="0" styleClass="stat-value"/>
+                <Label text="kegiatan" styleClass="stat-sub"/>
+            </VBox>
+            <VBox styleClass="stat-card stat-card-green" HBox.hgrow="ALWAYS">
+                <Label text="Pengguna Aktif" styleClass="stat-label"/>
+                <Label fx:id="lblPenggunaAktif" text="0" styleClass="stat-value"/>
+                <Label text="ikut memanen" styleClass="stat-sub"/>
+            </VBox>
+        </HBox>
+
+        <!-- RIWAYAT PANEN -->
+        <VBox styleClass="card" spacing="10">
+            <Label text="Riwayat Panen" styleClass="section-title"/>
+            <TableView fx:id="tblPanen" prefHeight="160">
+                <columns>
+                    <TableColumn fx:id="colTanaman"  text="Tanaman"  prefWidth="160"/>
+                    <TableColumn fx:id="colPengguna" text="Pengguna" prefWidth="160"/>
+                    <TableColumn fx:id="colTanggal"  text="Tanggal"  prefWidth="120"/>
+                    <TableColumn fx:id="colHasil"    text="Hasil"    prefWidth="120"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- RIWAYAT PERAWATAN -->
+        <VBox styleClass="card" spacing="10">
+            <Label text="Riwayat Perawatan" styleClass="section-title"/>
+            <TableView fx:id="tblPerawatan" prefHeight="160">
+                <columns>
+                    <TableColumn fx:id="colTanamanP" text="Tanaman"         prefWidth="160"/>
+                    <TableColumn fx:id="colJenis"    text="Jenis Perawatan" prefWidth="160"/>
+                    <TableColumn fx:id="colTanggalP" text="Tanggal"         prefWidth="120"/>
+                    <TableColumn fx:id="colStatusP"  text="Status"          prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+    </VBox>
+</ScrollPane>

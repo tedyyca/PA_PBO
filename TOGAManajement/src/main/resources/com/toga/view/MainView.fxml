@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.toga.controller.MainController"
+            prefWidth="960" prefHeight="620"
+            styleClass="root-pane">
+
+    <!-- SIDEBAR -->
+    <left>
+        <VBox styleClass="sidebar" prefWidth="185">
+            <Label text="🌿 TOGA" styleClass="sidebar-title"/>
+            <Separator/>
+            <Button text="Dashboard"    onAction="#showDashboard"  styleClass="nav-btn" maxWidth="Infinity"/>
+            <Button text="Tanaman"      onAction="#showTanaman"    styleClass="nav-btn" maxWidth="Infinity"/>
+            <Button text="Pengguna"     onAction="#showPengguna"   styleClass="nav-btn" maxWidth="Infinity"/>
+            <Button text="Perawatan"    onAction="#showPerawatan"  styleClass="nav-btn" maxWidth="Infinity"/>
+            <Button text="Panen"        onAction="#showPanen"      styleClass="nav-btn" maxWidth="Infinity"/>
+            <Button text="Laporan"      onAction="#showLaporan"    styleClass="nav-btn" maxWidth="Infinity"/>
+        </VBox>
+    </left>
+
+    <!-- CONTENT AREA -->
+    <center>
+        <StackPane fx:id="contentArea" styleClass="content-area"/>
+    </center>
+
+</BorderPane>

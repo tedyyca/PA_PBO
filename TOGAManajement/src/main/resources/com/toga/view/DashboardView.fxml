@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<ScrollPane fitToWidth="true" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.toga.controller.DashboardController"
+            styleClass="scroll-pane">
+    <VBox spacing="16" styleClass="page-container">
+        <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+        <Label text="Dashboard" styleClass="page-title"/>
+
+        <!-- STAT CARDS -->
+        <HBox spacing="12">
+            <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                <Label text="Total Tanaman" styleClass="stat-label"/>
+                <Label fx:id="lblTotalTanaman" text="0" styleClass="stat-value"/>
+                <Label text="semua jenis" styleClass="stat-sub"/>
+            </VBox>
+            <VBox styleClass="stat-card stat-card-green" HBox.hgrow="ALWAYS">
+                <Label text="Mendekati Panen" styleClass="stat-label"/>
+                <Label fx:id="lblSiapPanen" text="0" styleClass="stat-value"/>
+                <Label text="dalam 30 hari" styleClass="stat-sub"/>
+            </VBox>
+            <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                <Label text="Total Pengguna" styleClass="stat-label"/>
+                <Label fx:id="lblTotalPengguna" text="0" styleClass="stat-value"/>
+                <Label text="anggota terdaftar" styleClass="stat-sub"/>
+            </VBox>
+            <VBox styleClass="stat-card stat-card-amber" HBox.hgrow="ALWAYS">
+                <Label text="Jadwal Hari Ini" styleClass="stat-label"/>
+                <Label fx:id="lblJadwalHariIni" text="0" styleClass="stat-value"/>
+                <Label text="belum dilakukan" styleClass="stat-sub"/>
+            </VBox>
+        </HBox>
+
+        <!-- BOTTOM ROW -->
+        <HBox spacing="12">
+            <!-- KOMPOSISI -->
+            <VBox styleClass="card" spacing="10" HBox.hgrow="ALWAYS">
+                <Label text="Komposisi Tanaman" styleClass="section-title"/>
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="Rempah" styleClass="jenis-label" minWidth="70"/>
+                    <Label fx:id="lblJmlRempah" text="0 tanaman" styleClass="jenis-val"/>
+                </HBox>
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="Daun" styleClass="jenis-label" minWidth="70"/>
+                    <Label fx:id="lblJmlDaun" text="0 tanaman" styleClass="jenis-val"/>
+                </HBox>
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="Buah" styleClass="jenis-label" minWidth="70"/>
+                    <Label fx:id="lblJmlBuah" text="0 tanaman" styleClass="jenis-val"/>
+                </HBox>
+            </VBox>
+
+            <!-- MENDEKATI PANEN -->
+            <VBox styleClass="card" spacing="10" HBox.hgrow="ALWAYS">
+                <Label text="Mendekati Panen (≤ 30 hari)" styleClass="section-title"/>
+                <TableView fx:id="tblMendekatiPanen" prefHeight="150">
+                    <columns>
+                        <TableColumn fx:id="colNama" text="Tanaman" prefWidth="160"/>
+                        <TableColumn fx:id="colSisa" text="Sisa Hari" prefWidth="100"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </HBox>
+
+    </VBox>
+</ScrollPane>

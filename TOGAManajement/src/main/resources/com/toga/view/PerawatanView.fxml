@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<VBox spacing="14" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.toga.controller.PerawatanController"
+      styleClass="page-container">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+    <Label text="Jadwal Perawatan" styleClass="page-title"/>
+
+    <!-- ALERT LABEL -->
+    <Label fx:id="lblBelumHariIni" text="0 jadwal belum dilakukan hari ini" styleClass="alert-label"/>
+
+    <!-- FORM -->
+    <VBox styleClass="card" spacing="10">
+        <Label text="Tambah Jadwal" styleClass="section-title"/>
+        <GridPane hgap="12" vgap="10">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="33"/>
+                <ColumnConstraints percentWidth="33"/>
+                <ColumnConstraints percentWidth="34"/>
+            </columnConstraints>
+
+            <Label text="Pilih Tanaman" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label"/>
+            <ComboBox fx:id="cmbTanaman" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+
+            <Label text="Jenis Perawatan" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="form-label"/>
+            <ComboBox fx:id="cmbJenisPerawatan" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+            <Label text="Tanggal" GridPane.columnIndex="2" GridPane.rowIndex="0" styleClass="form-label"/>
+            <DatePicker fx:id="dpTanggal" maxWidth="Infinity" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+        </GridPane>
+    </VBox>
+
+    <!-- BUTTONS -->
+    <HBox spacing="10">
+        <Button text="Tambah Jadwal"   onAction="#handleTambah"        styleClass="btn-primary"/>
+        <Button text="Tandai Selesai"  onAction="#handleTandaiSelesai" styleClass="btn-secondary"/>
+        <Button text="Hapus"           onAction="#handleHapus"         styleClass="btn-danger"/>
+    </HBox>
+
+    <!-- TABLE -->
+    <TableView fx:id="tblJadwal" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colTanaman" text="Tanaman"        prefWidth="180"/>
+            <TableColumn fx:id="colJenis"   text="Jenis Perawatan" prefWidth="160"/>
+            <TableColumn fx:id="colTanggal" text="Tanggal"        prefWidth="130"/>
+            <TableColumn fx:id="colStatus"  text="Status"         prefWidth="100"/>
+        </columns>
+    </TableView>
+
+</VBox>

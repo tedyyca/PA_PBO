@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<VBox spacing="14" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.toga.controller.TanamanController"
+      styleClass="page-container">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+    <Label text="Kelola Tanaman" styleClass="page-title"/>
+
+    <!-- FORM -->
+    <VBox styleClass="card" spacing="10">
+        <Label text="Form Tanaman" styleClass="section-title"/>
+        <GridPane hgap="12" vgap="10">
+            <columnConstraints>
+                <ColumnConstraints percentWidth="50"/>
+                <ColumnConstraints percentWidth="50"/>
+            </columnConstraints>
+
+            <Label text="Jenis Tanaman" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label"/>
+            <ComboBox fx:id="cmbJenis" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+
+            <Label text="Nama Tanaman" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="form-label"/>
+            <TextField fx:id="tfNama" promptText="cth: Jahe" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+            <Label text="Nama Latin" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label"/>
+            <TextField fx:id="tfNamaLatin" promptText="cth: Zingiber officinale" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+
+            <Label fx:id="lblProperti" text="Aroma" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="form-label"/>
+            <TextField fx:id="tfProperti" promptText="isi sesuai jenis" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+            <Label text="Tanggal Tanam" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label"/>
+            <DatePicker fx:id="dpTanggal" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+
+            <Label text="Status" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="form-label"/>
+            <ComboBox fx:id="cmbStatus" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+
+            <Label text="Manfaat" GridPane.columnIndex="0" GridPane.rowIndex="6"
+                   GridPane.columnSpan="2" styleClass="form-label"/>
+            <TextArea fx:id="taManfaat" prefHeight="70" promptText="Tuliskan manfaat tanaman..."
+                      GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.columnSpan="2"/>
+        </GridPane>
+    </VBox>
+
+    <!-- BUTTONS -->
+    <HBox spacing="10">
+        <Button text="Tambah"         onAction="#handleTambah"        styleClass="btn-primary"/>
+        <Button text="Ubah"           onAction="#handleUbah"          styleClass="btn-secondary"/>
+        <Button text="Hapus"          onAction="#handleHapus"         styleClass="btn-danger"/>
+        <Button text="Info Obat"      onAction="#handleInfoObat"      styleClass="btn-info"/>
+        <Button text="Estimasi Panen" onAction="#handleEstimasiPanen" styleClass="btn-info"/>
+    </HBox>
+
+    <!-- TABLE -->
+    <TableView fx:id="tblTanaman" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colNama"     text="Nama"       prefWidth="160"/>
+            <TableColumn fx:id="colJenis"    text="Jenis"      prefWidth="140"/>
+            <TableColumn fx:id="colNamaLatin" text="Nama Latin" prefWidth="200"/>
+            <TableColumn fx:id="colStatus"   text="Status"     prefWidth="120"/>
+        </columns>
+    </TableView>
+
+</VBox>
