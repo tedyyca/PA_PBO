@@ -47,3 +47,40 @@ CREATE TABLE IF NOT EXISTS catatan_panen (
     FOREIGN KEY (tanaman_id) REFERENCES tanaman(id) ON DELETE CASCADE,
     FOREIGN KEY (pengguna_id) REFERENCES pengguna(id) ON DELETE CASCADE
 );
+
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE tanaman
+SET status = CASE
+    WHEN DATEDIFF(CURDATE(), tanggal_tanam) < 30
+        THEN 'BIBIT'
+    WHEN jenis = 'Tanaman Daun'
+         AND DATEDIFF(CURDATE(), tanggal_tanam) >= 30
+         AND DATEDIFF(CURDATE(), tanggal_tanam) < (60 - 14)
+        THEN 'TUMBUH'
+    WHEN jenis = 'Tanaman Daun'
+         AND DATEDIFF(CURDATE(), tanggal_tanam) >= (60 - 14)
+        THEN 'SIAP_PANEN'
+    WHEN jenis = 'Tanaman Buah'
+         AND DATEDIFF(CURDATE(), tanggal_tanam) >= 30
+         AND DATEDIFF(CURDATE(), tanggal_tanam) < (180 - 14)
+        THEN 'TUMBUH'
+    WHEN jenis = 'Tanaman Buah'
+         AND DATEDIFF(CURDATE(), tanggal_tanam) >= (180 - 14)
+        THEN 'SIAP_PANEN'
+    WHEN jenis = 'Tanaman Rempah'
+         AND DATEDIFF(CURDATE(), tanggal_tanam) >= 30
+         AND DATEDIFF(CURDATE(), tanggal_tanam) < (240 - 14)
+        THEN 'TUMBUH'
+    WHEN jenis = 'Tanaman Rempah'
+         AND DATEDIFF(CURDATE(), tanggal_tanam) >= (240 - 14)
+        THEN 'SIAP_PANEN'
+    ELSE 'BIBIT'
+END
+WHERE status != 'SUDAH_DIPANEN';
+
+SELECT nama, jenis, tanggal_tanam,
+       DATEDIFF(CURDATE(), tanggal_tanam) AS hari_sejak_tanam,
+       status
+FROM tanaman
+ORDER BY jenis, tanggal_tanam;
