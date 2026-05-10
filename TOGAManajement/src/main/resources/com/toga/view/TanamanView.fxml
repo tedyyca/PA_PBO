@@ -26,16 +26,21 @@
             <TextField fx:id="tfNama" promptText="cth: Jahe" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
             <Label text="Nama Latin" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label"/>
-            <TextField fx:id="tfNamaLatin" promptText="cth: Zingiber officinale" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+            <TextField fx:id="tfNamaLatin" promptText="cth: Zingiber officinale"
+                       GridPane.columnIndex="0" GridPane.rowIndex="3"/>
 
             <Label fx:id="lblProperti" text="Aroma" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="form-label"/>
-            <TextField fx:id="tfProperti" promptText="isi sesuai jenis" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+            <TextField fx:id="tfProperti" promptText="isi sesuai jenis"
+                       GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
             <Label text="Tanggal Tanam" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label"/>
             <DatePicker fx:id="dpTanggal" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
 
-            <Label text="Status" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="form-label"/>
-            <ComboBox fx:id="cmbStatus" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+            <!-- Status sekarang read-only, dihitung otomatis -->
+            <Label text="Status (otomatis)" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="form-label"/>
+            <Label fx:id="lblStatusInfo" text="Status otomatis: BIBIT"
+                   GridPane.columnIndex="1" GridPane.rowIndex="5"
+                   styleClass="alert-label" maxWidth="Infinity"/>
 
             <Label text="Manfaat" GridPane.columnIndex="0" GridPane.rowIndex="6"
                    GridPane.columnSpan="2" styleClass="form-label"/>
@@ -56,10 +61,10 @@
     <!-- TABLE -->
     <TableView fx:id="tblTanaman" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="colNama"     text="Nama"       prefWidth="160"/>
-            <TableColumn fx:id="colJenis"    text="Jenis"      prefWidth="140"/>
+            <TableColumn fx:id="colNama"      text="Nama"       prefWidth="160"/>
+            <TableColumn fx:id="colJenis"     text="Jenis"      prefWidth="140"/>
             <TableColumn fx:id="colNamaLatin" text="Nama Latin" prefWidth="200"/>
-            <TableColumn fx:id="colStatus"   text="Status"     prefWidth="120"/>
+            <TableColumn fx:id="colStatus"    text="Status"     prefWidth="120"/>
         </columns>
     </TableView>
 

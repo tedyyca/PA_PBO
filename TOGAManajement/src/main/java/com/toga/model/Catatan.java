@@ -32,10 +32,6 @@ public class Catatan {
         return true;
     }
 
-    public String buatRingkasan(Tanaman t, Pengguna p) {
-        return "Catatan: " + p.getInfoSingkat() + " - " + t.getInfoSingkat();
-    }
-
     public void tampilInfo() {
         System.out.println("Tanaman   : " + namaTanaman);
         System.out.println("Pengguna  : " + namaPengguna);

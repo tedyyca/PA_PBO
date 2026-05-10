@@ -13,7 +13,7 @@
     <!-- ALERT LABEL -->
     <Label fx:id="lblBelumHariIni" text="0 jadwal belum dilakukan hari ini" styleClass="alert-label"/>
 
-    <!-- FORM -->
+    <!-- FORM TAMBAH JADWAL -->
     <VBox styleClass="card" spacing="10">
         <Label text="Tambah Jadwal" styleClass="section-title"/>
         <GridPane hgap="12" vgap="10">
@@ -34,20 +34,31 @@
         </GridPane>
     </VBox>
 
+    <!-- FORM TANDAI SELESAI -->
+    <VBox styleClass="card" spacing="10">
+        <Label text="Tandai Selesai" styleClass="section-title"/>
+        <HBox spacing="12" alignment="CENTER_LEFT">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Pilih Pengguna yang Merawat" styleClass="form-label"/>
+                <ComboBox fx:id="cmbPengguna" maxWidth="Infinity"/>
+            </VBox>
+        </HBox>
+    </VBox>
+
     <!-- BUTTONS -->
     <HBox spacing="10">
-        <Button text="Tambah Jadwal"   onAction="#handleTambah"        styleClass="btn-primary"/>
-        <Button text="Tandai Selesai"  onAction="#handleTandaiSelesai" styleClass="btn-secondary"/>
-        <Button text="Hapus"           onAction="#handleHapus"         styleClass="btn-danger"/>
+        <Button text="Tambah Jadwal"  onAction="#handleTambah"        styleClass="btn-primary"/>
+        <Button text="Tandai Selesai" onAction="#handleTandaiSelesai" styleClass="btn-secondary"/>
+        <Button text="Hapus"          onAction="#handleHapus"         styleClass="btn-danger"/>
     </HBox>
 
     <!-- TABLE -->
     <TableView fx:id="tblJadwal" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="colTanaman" text="Tanaman"        prefWidth="180"/>
+            <TableColumn fx:id="colTanaman" text="Tanaman"         prefWidth="180"/>
             <TableColumn fx:id="colJenis"   text="Jenis Perawatan" prefWidth="160"/>
-            <TableColumn fx:id="colTanggal" text="Tanggal"        prefWidth="130"/>
-            <TableColumn fx:id="colStatus"  text="Status"         prefWidth="100"/>
+            <TableColumn fx:id="colTanggal" text="Tanggal"         prefWidth="130"/>
+            <TableColumn fx:id="colStatus"  text="Status"          prefWidth="100"/>
         </columns>
     </TableView>
 

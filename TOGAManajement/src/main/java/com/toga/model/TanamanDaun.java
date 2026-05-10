@@ -3,7 +3,7 @@ package com.toga.model;
 import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDate;
 
-public class TanamanDaun extends Tanaman implements ITanamanObat, IPerawatan {
+public class TanamanDaun extends Tanaman implements ITanamanObat {
     private String bentukDaun;
 
     public TanamanDaun(String nama, String namaLatin, String manfaat, String bentukDaun, StatusTanaman status, LocalDate tanggalTanam) {
@@ -18,17 +18,10 @@ public class TanamanDaun extends Tanaman implements ITanamanObat, IPerawatan {
         return true;
     }
 
-    @Override
-    public String getJenis() { return "Tanaman Daun"; }
-
-    @Override
-    public String getPropertiTambahan() { return bentukDaun; }
-
-    @Override
-    String getInfoSingkat() { return nama + " (" + getNamaLatin() + ") - Daun"; }
-
-    @Override
-    public int estimasiHariPanen() { return 60; }
+    @Override public String getJenis() { return "Tanaman Daun"; }
+    @Override public String getPropertiTambahan() { return bentukDaun; }
+    @Override String getInfoSingkat() { return nama + " (" + getNamaLatin() + ") - Daun"; }
+    @Override public int estimasiHariPanen() { return 60; }
 
     @Override
     public void tampilInfo() {
@@ -47,10 +40,4 @@ public class TanamanDaun extends Tanaman implements ITanamanObat, IPerawatan {
         return "Daun " + nama + " dapat direbus untuk diminum air rebusannya, " +
                 "atau ditumbuk halus dan ditempelkan langsung pada kulit.";
     }
-
-    @Override
-    public String getJadwalSiram() { return "Setiap hari"; }
-
-    @Override
-    public String getCahayaYangDibutuhkan() { return "Teduh hingga semi teduh"; }
 }

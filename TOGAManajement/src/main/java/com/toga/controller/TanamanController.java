@@ -36,8 +36,8 @@ public class TanamanController {
     @FXML private TextField        tfProperti;
     @FXML private TextArea         taManfaat;
     @FXML private DatePicker       dpTanggal;
-    @FXML private ComboBox<String> cmbStatus;
     @FXML private Label            lblProperti;
+    @FXML private Label            lblStatusInfo;  // label read-only untuk tampilkan status kalkulasi
 
     @FXML private TableView<TanamanRow>              tblTanaman;
     @FXML private TableColumn<TanamanRow, String>    colNama;
@@ -48,20 +48,20 @@ public class TanamanController {
     private final ObservableList<TanamanRow> data = FXCollections.observableArrayList();
     private int selectedId = -1;
 
-    // Regex: hanya huruf (a-z, A-Z) dan spasi
     private static final String REGEX_HURUF_SPASI = "[a-zA-Z ]+";
 
     @FXML
     public void initialize() {
         cmbJenis.setItems(FXCollections.observableArrayList(
                 "Tanaman Rempah", "Tanaman Daun", "Tanaman Buah"));
-        cmbStatus.setItems(FXCollections.observableArrayList(
-                "BIBIT", "TUMBUH", "SIAP_PANEN", "SUDAH_DIPANEN"));
         cmbJenis.setValue("Tanaman Rempah");
-        cmbStatus.setValue("BIBIT");
         dpTanggal.setValue(LocalDate.now());
 
         cmbJenis.setOnAction(e -> updateLabelProperti());
+
+        // Update preview status saat tanggal atau jenis berubah
+        dpTanggal.valueProperty().addListener((obs, o, n) -> updateStatusPreview());
+        cmbJenis.valueProperty().addListener((obs, o, n) -> updateStatusPreview());
 
         pasangFilterHurufSpasi(tfNama);
         pasangFilterHurufSpasi(tfNamaLatin);
@@ -81,11 +81,12 @@ public class TanamanController {
                 taManfaat.setText(row.getManfaat());
                 tfProperti.setText(row.getProperti());
                 cmbJenis.setValue(row.getJenis());
-                cmbStatus.setValue(row.getStatus());
                 dpTanggal.setValue(row.getTanggalTanam());
+                lblStatusInfo.setText("Status saat ini: " + row.getStatus());
             }
         });
 
+        updateStatusPreview();
         loadData();
     }
 
@@ -102,6 +103,26 @@ public class TanamanController {
         if ("Tanaman Rempah".equals(jenis))    lblProperti.setText("Aroma");
         else if ("Tanaman Daun".equals(jenis)) lblProperti.setText("Bentuk Daun");
         else                                   lblProperti.setText("Musim Berbuah");
+        updateStatusPreview();
+    }
+
+    /** Tampilkan preview status yang akan dikalkulasi berdasarkan input form saat ini */
+    private void updateStatusPreview() {
+        LocalDate tgl   = dpTanggal.getValue();
+        String    jenis = cmbJenis.getValue();
+        if (tgl == null || jenis == null) return;
+
+        int estimasi = getEstimasiByJenis(jenis);
+        StatusTanaman status = Tanaman.hitungStatus(tgl, estimasi);
+        lblStatusInfo.setText("Status otomatis: " + status.name());
+    }
+
+    private int getEstimasiByJenis(String jenis) {
+        switch (jenis) {
+            case "Tanaman Rempah": return 240;
+            case "Tanaman Daun":   return 60;
+            default:               return 180;
+        }
     }
 
     @FXML
@@ -111,7 +132,6 @@ public class TanamanController {
         String    manfaat  = taManfaat.getText().trim();
         String    properti = tfProperti.getText().trim();
         String    jenis    = cmbJenis.getValue();
-        String    status   = cmbStatus.getValue();
         LocalDate tanggal  = dpTanggal.getValue();
 
         if (nama.isEmpty() || latin.isEmpty() || manfaat.isEmpty()
@@ -127,9 +147,13 @@ public class TanamanController {
         if (!properti.matches(REGEX_HURUF_SPASI)) {
             showAlert("Field " + lblProperti.getText() + " hanya boleh berisi huruf dan spasi!"); return;
         }
-        if (isDuplikatTanaman(-1, nama, latin, manfaat, jenis, properti, status, tanggal)) {
+        if (isDuplikatTanaman(-1, nama, latin, manfaat, jenis, properti, tanggal)) {
             showAlert("Data tanaman sudah ada! Tidak dapat menambahkan duplikat."); return;
         }
+
+        // Hitung status otomatis — SUDAH_DIPANEN tidak mungkin saat pertama tambah
+        int estimasi = getEstimasiByJenis(jenis);
+        StatusTanaman status = Tanaman.hitungStatus(tanggal, estimasi);
 
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
@@ -141,12 +165,12 @@ public class TanamanController {
             ps.setString(3, manfaat);
             ps.setString(4, jenis);
             ps.setString(5, properti);
-            ps.setString(6, status);
+            ps.setString(6, status.name());
             ps.setDate(7, Date.valueOf(tanggal));
             ps.executeUpdate();
             loadData();
             clearForm();
-            showInfo("Tanaman berhasil ditambahkan!");
+            showInfo("Tanaman berhasil ditambahkan! Status: " + status.name());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -161,7 +185,6 @@ public class TanamanController {
         String    manfaat  = taManfaat.getText().trim();
         String    properti = tfProperti.getText().trim();
         String    jenis    = cmbJenis.getValue();
-        String    status   = cmbStatus.getValue();
         LocalDate tanggal  = dpTanggal.getValue();
 
         if (nama.isEmpty() || latin.isEmpty() || manfaat.isEmpty()
@@ -177,8 +200,18 @@ public class TanamanController {
         if (!properti.matches(REGEX_HURUF_SPASI)) {
             showAlert("Field " + lblProperti.getText() + " hanya boleh berisi huruf dan spasi!"); return;
         }
-        if (isDuplikatTanaman(selectedId, nama, latin, manfaat, jenis, properti, status, tanggal)) {
+        if (isDuplikatTanaman(selectedId, nama, latin, manfaat, jenis, properti, tanggal)) {
             showAlert("Data tanaman sudah ada! Tidak dapat menyimpan duplikat."); return;
+        }
+
+        // Cek apakah tanaman ini sudah dipanen — kalau sudah, jangan recalculate status
+        String statusSaatIni = getStatusById(selectedId);
+        StatusTanaman statusBaru;
+        if ("SUDAH_DIPANEN".equals(statusSaatIni)) {
+            statusBaru = StatusTanaman.SUDAH_DIPANEN;
+        } else {
+            int estimasi = getEstimasiByJenis(jenis);
+            statusBaru = Tanaman.hitungStatus(tanggal, estimasi);
         }
 
         try (Connection conn = DBConnection.getConnection()) {
@@ -192,13 +225,13 @@ public class TanamanController {
             ps.setString(3, manfaat);
             ps.setString(4, jenis);
             ps.setString(5, properti);
-            ps.setString(6, status);
+            ps.setString(6, statusBaru.name());
             ps.setDate(7, Date.valueOf(tanggal));
             ps.setInt(8, selectedId);
             ps.executeUpdate();
             loadData();
             clearForm();
-            showInfo("Tanaman berhasil diubah!");
+            showInfo("Tanaman berhasil diubah! Status: " + statusBaru.name());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -267,10 +300,22 @@ public class TanamanController {
         });
     }
 
+    private String getStatusById(int id) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(
+                    "SELECT status FROM tanaman WHERE id=?");
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getString("status");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
     private boolean isDuplikatTanaman(int excludeId,
                                       String nama, String namaLatin, String manfaat,
-                                      String jenis, String properti,
-                                      String status, LocalDate tanggal) {
+                                      String jenis, String properti, LocalDate tanggal) {
         String sql =
                 "SELECT COUNT(*) FROM tanaman "
                         + "WHERE LOWER(TRIM(nama))              = LOWER(TRIM(?)) "
@@ -278,7 +323,6 @@ public class TanamanController {
                         + "  AND LOWER(TRIM(manfaat))           = LOWER(TRIM(?)) "
                         + "  AND jenis                          = ? "
                         + "  AND LOWER(TRIM(properti_tambahan)) = LOWER(TRIM(?)) "
-                        + "  AND status                         = ? "
                         + "  AND tanggal_tanam                  = ? "
                         + "  AND id                            != ?";
         try (Connection conn = DBConnection.getConnection();
@@ -288,9 +332,8 @@ public class TanamanController {
             ps.setString(3, manfaat);
             ps.setString(4, jenis);
             ps.setString(5, properti);
-            ps.setString(6, status);
-            ps.setDate(7, Date.valueOf(tanggal));
-            ps.setInt(8, excludeId);
+            ps.setDate(6, Date.valueOf(tanggal));
+            ps.setInt(7, excludeId);
             ResultSet rs = ps.executeQuery();
             return rs.next() && rs.getInt(1) > 0;
         } catch (Exception e) {
@@ -345,9 +388,9 @@ public class TanamanController {
         taManfaat.clear();
         tfProperti.clear();
         cmbJenis.setValue("Tanaman Rempah");
-        cmbStatus.setValue("BIBIT");
         dpTanggal.setValue(LocalDate.now());
         selectedId = -1;
+        updateStatusPreview();
     }
 
     private void showAlert(String msg) {

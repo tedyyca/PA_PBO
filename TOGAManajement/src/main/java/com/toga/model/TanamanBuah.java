@@ -3,7 +3,7 @@ package com.toga.model;
 import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDate;
 
-public class TanamanBuah extends Tanaman implements ITanamanObat, IPerawatan {
+public class TanamanBuah extends Tanaman implements ITanamanObat {
     private String musimBerbuah;
 
     public TanamanBuah(String nama, String namaLatin, String manfaat, String musimBerbuah, StatusTanaman status, LocalDate tanggalTanam) {
@@ -18,17 +18,10 @@ public class TanamanBuah extends Tanaman implements ITanamanObat, IPerawatan {
         return true;
     }
 
-    @Override
-    public String getJenis() { return "Tanaman Buah"; }
-
-    @Override
-    public String getPropertiTambahan() { return musimBerbuah; }
-
-    @Override
-    String getInfoSingkat() { return nama + " (" + getNamaLatin() + ") - Buah"; }
-
-    @Override
-    public int estimasiHariPanen() { return 180; }
+    @Override public String getJenis() { return "Tanaman Buah"; }
+    @Override public String getPropertiTambahan() { return musimBerbuah; }
+    @Override String getInfoSingkat() { return nama + " (" + getNamaLatin() + ") - Buah"; }
+    @Override public int estimasiHariPanen() { return 180; }
 
     @Override
     public void tampilInfo() {
@@ -47,10 +40,4 @@ public class TanamanBuah extends Tanaman implements ITanamanObat, IPerawatan {
         return "Buah " + nama + " dapat dikonsumsi langsung saat matang, " +
                 "atau diolah menjadi jus dan ekstrak untuk penggunaan obat.";
     }
-
-    @Override
-    public String getJadwalSiram() { return "3 hari sekali"; }
-
-    @Override
-    public String getCahayaYangDibutuhkan() { return "Sinar matahari penuh"; }
 }

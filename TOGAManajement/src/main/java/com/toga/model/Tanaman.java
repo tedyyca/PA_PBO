@@ -2,7 +2,7 @@ package com.toga.model;
 
 import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.temporal.ChronoUnit;
 
 public abstract class Tanaman {
     private int id;
@@ -25,27 +25,21 @@ public abstract class Tanaman {
 
     public String getNama() { return nama; }
     public boolean setNama(String nama) {
-        if (StringUtils.isBlank(nama)) {
-            return false;
-        }
+        if (StringUtils.isBlank(nama)) return false;
         this.nama = nama;
         return true;
     }
 
     public String getNamaLatin() { return namaLatin; }
     public boolean setNamaLatin(String namaLatin) {
-        if (StringUtils.isBlank(namaLatin)) {
-            return false;
-        }
+        if (StringUtils.isBlank(namaLatin)) return false;
         this.namaLatin = namaLatin;
         return true;
     }
 
     public String getManfaat() { return manfaat; }
     public boolean setManfaat(String manfaat) {
-        if (StringUtils.isBlank(manfaat)) {
-            return false;
-        }
+        if (StringUtils.isBlank(manfaat)) return false;
         this.manfaat = manfaat;
         return true;
     }
@@ -75,20 +69,32 @@ public abstract class Tanaman {
         if (tanggalTanam == null) return -1;
         int totalHari = estimasiHariPanen();
         LocalDate tanggalPanen = tanggalTanam.plusDays(totalHari);
-        long sisa = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), tanggalPanen);
+        long sisa = ChronoUnit.DAYS.between(LocalDate.now(), tanggalPanen);
         return (int) sisa;
     }
 
-    public static int hitungTanaman(ArrayList<Tanaman> daftar) {
-        return daftar.size();
-    }
+    /**
+     * Menghitung status otomatis berdasarkan tanggal tanam dan estimasi hari panen.
+     * Dipanggil saat menyimpan data tanaman (Tambah/Ubah), KECUALI jika sudah dipanen.
+     *
+     * Logika:
+     *   - Hari ke-0 s.d. hari ke-29              → BIBIT
+     *   - Hari ke-30 s.d. (estimasi - 15)        → TUMBUH
+     *   - (estimasi - 14) s.d. estimasi ke atas  → SIAP_PANEN
+     *
+     * Status SUDAH_DIPANEN hanya di-set oleh PanenController, tidak lewat sini.
+     */
+    public static StatusTanaman hitungStatus(LocalDate tanggalTanam, int estimasiHari) {
+        if (tanggalTanam == null) return StatusTanaman.BIBIT;
+        long hariSejaktanam = ChronoUnit.DAYS.between(tanggalTanam, LocalDate.now());
 
-    public static int hitungTanaman(ArrayList<Tanaman> daftar, String jenis) {
-        int count = 0;
-        for (Tanaman t : daftar) {
-            if (t.getJenis().equalsIgnoreCase(jenis)) count++;
+        if (hariSejaktanam < 30) {
+            return StatusTanaman.BIBIT;
+        } else if (hariSejaktanam < estimasiHari - 14) {
+            return StatusTanaman.TUMBUH;
+        } else {
+            return StatusTanaman.SIAP_PANEN;
         }
-        return count;
     }
 
     public void tampilInfo() {
