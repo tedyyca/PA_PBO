@@ -73,17 +73,6 @@ public abstract class Tanaman {
         return (int) sisa;
     }
 
-    /**
-     * Menghitung status otomatis berdasarkan tanggal tanam dan estimasi hari panen.
-     * Dipanggil saat menyimpan data tanaman (Tambah/Ubah), KECUALI jika sudah dipanen.
-     *
-     * Logika:
-     *   - Hari ke-0 s.d. hari ke-29              → BIBIT
-     *   - Hari ke-30 s.d. (estimasi - 15)        → TUMBUH
-     *   - (estimasi - 14) s.d. estimasi ke atas  → SIAP_PANEN
-     *
-     * Status SUDAH_DIPANEN hanya di-set oleh PanenController, tidak lewat sini.
-     */
     public static StatusTanaman hitungStatus(LocalDate tanggalTanam, int estimasiHari) {
         if (tanggalTanam == null) return StatusTanaman.BIBIT;
         long hariSejaktanam = ChronoUnit.DAYS.between(tanggalTanam, LocalDate.now());

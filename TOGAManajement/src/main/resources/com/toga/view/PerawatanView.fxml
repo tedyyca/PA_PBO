@@ -55,10 +55,11 @@
     <!-- TABLE -->
     <TableView fx:id="tblJadwal" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="colTanaman" text="Tanaman"         prefWidth="180"/>
-            <TableColumn fx:id="colJenis"   text="Jenis Perawatan" prefWidth="160"/>
-            <TableColumn fx:id="colTanggal" text="Tanggal"         prefWidth="130"/>
-            <TableColumn fx:id="colStatus"  text="Status"          prefWidth="100"/>
+            <TableColumn fx:id="colTanaman" text="Tanaman"         prefWidth="150"/>
+            <TableColumn fx:id="colJenis"   text="Jenis Perawatan" prefWidth="130"/>
+            <TableColumn fx:id="colTanggal" text="Tanggal"         prefWidth="110"/>
+            <TableColumn fx:id="colStatus"  text="Status"          prefWidth="80"/>
+            <TableColumn fx:id="colPetugas" text="Petugas"         prefWidth="140"/>
         </columns>
     </TableView>
 

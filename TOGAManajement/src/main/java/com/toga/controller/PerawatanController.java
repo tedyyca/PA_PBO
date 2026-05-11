@@ -1,5 +1,7 @@
 package com.toga.controller;
 
+import com.toga.model.CatatanPerawatan;
+import com.toga.model.JadwalPerawatan;
 import com.toga.util.DBConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,7 +17,7 @@ public class PerawatanController {
     @FXML private ComboBox<String> cmbTanaman;
     @FXML private ComboBox<String> cmbJenisPerawatan;
     @FXML private DatePicker       dpTanggal;
-    @FXML private ComboBox<String> cmbPengguna;   // untuk Tandai Selesai
+    @FXML private ComboBox<String> cmbPengguna;
     @FXML private Label            lblBelumHariIni;
 
     @FXML private TableView<JadwalRow>              tblJadwal;
@@ -23,6 +25,7 @@ public class PerawatanController {
     @FXML private TableColumn<JadwalRow, String>    colJenis;
     @FXML private TableColumn<JadwalRow, String>    colTanggal;
     @FXML private TableColumn<JadwalRow, String>    colStatus;
+    @FXML private TableColumn<JadwalRow, String>    colPetugas;
 
     private ObservableList<JadwalRow> data = FXCollections.observableArrayList();
     private int selectedId = -1;
@@ -41,6 +44,7 @@ public class PerawatanController {
         colJenis.setCellValueFactory(new PropertyValueFactory<>("jenisPerawatan"));
         colTanggal.setCellValueFactory(new PropertyValueFactory<>("tanggal"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+        colPetugas.setCellValueFactory(new PropertyValueFactory<>("petugas"));
 
         tblJadwal.setOnMouseClicked(e -> {
             JadwalRow row = tblJadwal.getSelectionModel().getSelectedItem();
@@ -95,15 +99,23 @@ public class PerawatanController {
         int tanamanId = tanamanMap.getOrDefault(namaTanaman, -1);
         if (tanamanId == -1) { showAlert("Tanaman tidak ditemukan!"); return; }
 
+        JadwalPerawatan jadwal = new JadwalPerawatan(tanamanId, namaTanaman, jenis, tanggal, false);
+        if (!jadwal.setJenisPerawatan(jenis)) {
+            showAlert("Jenis perawatan tidak valid!"); return;
+        }
+        if (!jadwal.setTanggal(tanggal)) {
+            showAlert("Tanggal tidak valid!"); return;
+        }
+
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "INSERT INTO jadwal_perawatan "
                             + "(tanaman_id, jenis_perawatan, tanggal, sudah_dilakukan) "
                             + "VALUES (?,?,?,?)");
             ps.setInt(1, tanamanId);
-            ps.setString(2, jenis);
-            ps.setDate(3, Date.valueOf(tanggal));
-            ps.setBoolean(4, false);
+            ps.setString(2, jadwal.getJenisPerawatan());
+            ps.setDate(3, Date.valueOf(jadwal.getTanggal()));
+            ps.setBoolean(4, jadwal.isSudahDilakukan());
             ps.executeUpdate();
             loadData();
             showInfo("Jadwal berhasil ditambahkan!");
@@ -112,10 +124,6 @@ public class PerawatanController {
         }
     }
 
-    /**
-     * Tandai jadwal selesai DAN catat ke catatan_perawatan (siapa yang merawat).
-     * Pengguna dipilih lewat cmbPengguna.
-     */
     @FXML
     public void handleTandaiSelesai() {
         if (selectedId == -1) { showAlert("Pilih jadwal terlebih dahulu!"); return; }
@@ -129,10 +137,12 @@ public class PerawatanController {
         if (penggunaId == -1) { showAlert("Pengguna tidak ditemukan!"); return; }
 
         try (Connection conn = DBConnection.getConnection()) {
-            // Ambil detail jadwal yang dipilih
             PreparedStatement psGet = conn.prepareStatement(
-                    "SELECT j.tanaman_id, j.jenis_perawatan, j.tanggal, j.sudah_dilakukan "
-                            + "FROM jadwal_perawatan j WHERE j.id=?");
+                    "SELECT j.tanaman_id, j.jenis_perawatan, j.tanggal, "
+                            + "j.sudah_dilakukan, t.nama "
+                            + "FROM jadwal_perawatan j "
+                            + "JOIN tanaman t ON j.tanaman_id = t.id "
+                            + "WHERE j.id=?");
             psGet.setInt(1, selectedId);
             ResultSet rs = psGet.executeQuery();
             if (!rs.next()) { showAlert("Jadwal tidak ditemukan!"); return; }
@@ -141,25 +151,35 @@ public class PerawatanController {
                 showAlert("Jadwal ini sudah ditandai selesai sebelumnya!"); return;
             }
 
-            int       tanamanId    = rs.getInt("tanaman_id");
+            int       tanamanId      = rs.getInt("tanaman_id");
+            String    namaTanaman    = rs.getString("nama");
             String    jenisPerawatan = rs.getString("jenis_perawatan");
-            LocalDate tanggal      = rs.getDate("tanggal").toLocalDate();
+            LocalDate tanggal        = rs.getDate("tanggal").toLocalDate();
 
-            // Update jadwal jadi selesai
+            JadwalPerawatan jadwal = new JadwalPerawatan(
+                    tanamanId, namaTanaman, jenisPerawatan, tanggal, false);
+            jadwal.setSudahDilakukan(true);
+
+            CatatanPerawatan catatan = new CatatanPerawatan(
+                    tanamanId, penggunaId,
+                    namaTanaman, namaPengguna,
+                    jadwal.getJenisPerawatan() + " oleh " + namaPengguna,
+                    jadwal.getTanggal());
+
             PreparedStatement psUpdate = conn.prepareStatement(
-                    "UPDATE jadwal_perawatan SET sudah_dilakukan=TRUE WHERE id=?");
-            psUpdate.setInt(1, selectedId);
+                    "UPDATE jadwal_perawatan SET sudah_dilakukan=? WHERE id=?");
+            psUpdate.setBoolean(1, jadwal.isSudahDilakukan());
+            psUpdate.setInt(2, selectedId);
             psUpdate.executeUpdate();
 
-            // Insert ke catatan_perawatan — mencatat siapa yang melakukan perawatan
             PreparedStatement psInsert = conn.prepareStatement(
                     "INSERT INTO catatan_perawatan "
                             + "(tanaman_id, pengguna_id, keterangan, tanggal) "
                             + "VALUES (?,?,?,?)");
-            psInsert.setInt(1, tanamanId);
-            psInsert.setInt(2, penggunaId);
-            psInsert.setString(3, jenisPerawatan + " oleh " + namaPengguna);
-            psInsert.setDate(4, Date.valueOf(tanggal));
+            psInsert.setInt(1, catatan.getTanamanId());
+            psInsert.setInt(2, catatan.getPenggunaId());
+            psInsert.setString(3, catatan.getKeterangan());
+            psInsert.setDate(4, Date.valueOf(catatan.getTanggal()));
             psInsert.executeUpdate();
 
             loadData();
@@ -197,18 +217,26 @@ public class PerawatanController {
         int belum = 0;
         try (Connection conn = DBConnection.getConnection()) {
             ResultSet rs = conn.createStatement().executeQuery(
-                    "SELECT j.id, t.nama, j.jenis_perawatan, j.tanggal, j.sudah_dilakukan "
+                    "SELECT j.id, t.nama AS nama_tanaman, j.jenis_perawatan, "
+                            + "       j.tanggal, j.sudah_dilakukan, "
+                            + "       p.nama AS nama_petugas "
                             + "FROM jadwal_perawatan j "
                             + "JOIN tanaman t ON j.tanaman_id = t.id "
+                            + "LEFT JOIN catatan_perawatan cp "
+                            + "       ON cp.tanaman_id = j.tanaman_id "
+                            + "      AND cp.tanggal    = j.tanggal "
+                            + "LEFT JOIN pengguna p ON cp.pengguna_id = p.id "
                             + "ORDER BY j.tanggal DESC");
             while (rs.next()) {
-                boolean sudah = rs.getBoolean("sudah_dilakukan");
+                boolean sudah    = rs.getBoolean("sudah_dilakukan");
+                String  petugas  = rs.getString("nama_petugas");
                 data.add(new JadwalRow(
                         rs.getInt("id"),
-                        rs.getString("nama"),
+                        rs.getString("nama_tanaman"),
                         rs.getString("jenis_perawatan"),
                         rs.getDate("tanggal").toLocalDate().toString(),
-                        sudah ? "Selesai" : "Belum"));
+                        sudah ? "Selesai" : "Belum",
+                        petugas != null ? petugas : "-"));
                 LocalDate tgl = rs.getDate("tanggal").toLocalDate();
                 if (!sudah && tgl.equals(LocalDate.now())) belum++;
             }
@@ -229,21 +257,23 @@ public class PerawatanController {
 
     public static class JadwalRow {
         private int    id;
-        private String namaTanaman, jenisPerawatan, tanggal, status;
+        private String namaTanaman, jenisPerawatan, tanggal, status, petugas;
 
         public JadwalRow(int id, String namaTanaman, String jenisPerawatan,
-                         String tanggal, String status) {
+                         String tanggal, String status, String petugas) {
             this.id             = id;
             this.namaTanaman    = namaTanaman;
             this.jenisPerawatan = jenisPerawatan;
             this.tanggal        = tanggal;
             this.status         = status;
+            this.petugas        = petugas;
         }
 
-        public int    getId()               { return id; }
-        public String getNamaTanaman()      { return namaTanaman; }
-        public String getJenisPerawatan()   { return jenisPerawatan; }
-        public String getTanggal()          { return tanggal; }
-        public String getStatus()           { return status; }
+        public int    getId()             { return id; }
+        public String getNamaTanaman()    { return namaTanaman; }
+        public String getJenisPerawatan() { return jenisPerawatan; }
+        public String getTanggal()        { return tanggal; }
+        public String getStatus()         { return status; }
+        public String getPetugas()        { return petugas; }
     }
 }

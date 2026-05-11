@@ -1,5 +1,6 @@
 package com.toga.controller;
 
+import com.toga.model.Pengguna;
 import com.toga.util.DBConnection;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,22 +28,20 @@ public class PenggunaController {
     private final ObservableList<PenggunaRow> data = FXCollections.observableArrayList();
     private int selectedId = -1;
 
-    private static final String REGEX_NAMA   = "[a-zA-Z ]+";          // huruf & spasi
-    private static final String REGEX_ALAMAT = "[a-zA-Z0-9 .]+";      // huruf, angka, spasi, titik
+    private static final String REGEX_NAMA   = "[a-zA-Z ]+";
+    private static final String REGEX_ALAMAT = "[a-zA-Z0-9 .]+";
 
     @FXML
     public void initialize() {
         colNama.setCellValueFactory(new PropertyValueFactory<>("nama"));
         colAlamat.setCellValueFactory(new PropertyValueFactory<>("alamat"));
 
-        // Filter real-time nama: hanya huruf & spasi
         tfNama.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && !newVal.isEmpty() && !newVal.matches("[a-zA-Z ]*")) {
                 tfNama.setText(oldVal);
             }
         });
 
-        // Filter real-time alamat: hanya huruf, angka, spasi, titik
         tfAlamat.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && !newVal.isEmpty() && !newVal.matches("[a-zA-Z0-9 .]*")) {
                 tfAlamat.setText(oldVal);
@@ -75,20 +74,27 @@ public class PenggunaController {
         if (!alamat.matches(REGEX_ALAMAT)) {
             showAlert("Alamat hanya boleh berisi huruf, angka, spasi, dan titik!"); return;
         }
-        // Nama tidak boleh sama dengan pengguna lain
         if (isNamaExists(-1, nama)) {
             showAlert("Nama pengguna \"" + nama + "\" sudah terdaftar!\nGunakan nama yang berbeda."); return;
         }
-        // Semua komponen tidak boleh sama (duplikat penuh)
         if (isDuplikatPengguna(-1, nama, alamat)) {
             showAlert("Data pengguna sudah ada! Tidak dapat menambahkan duplikat."); return;
+        }
+
+        Pengguna pengguna = new Pengguna(nama, alamat);
+        if (!pengguna.setNama(nama)) {
+            showAlert("Nama tidak valid!"); return;
+        }
+        if (!pengguna.setAlamat(alamat)) {
+            showAlert("Alamat tidak valid!"); return;
         }
 
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "INSERT INTO pengguna (nama, alamat) VALUES (?, ?)");
-            ps.setString(1, nama);
-            ps.setString(2, alamat);
+            // Ambil data dari objek model, bukan langsung dari TextField
+            ps.setString(1, pengguna.getNama());
+            ps.setString(2, pengguna.getAlamat());
             ps.executeUpdate();
             loadData();
             clearForm();
@@ -114,20 +120,26 @@ public class PenggunaController {
         if (!alamat.matches(REGEX_ALAMAT)) {
             showAlert("Alamat hanya boleh berisi huruf, angka, spasi, dan titik!"); return;
         }
-        // Cek nama unik (kecualikan diri sendiri)
         if (isNamaExists(selectedId, nama)) {
             showAlert("Nama pengguna \"" + nama + "\" sudah terdaftar!\nGunakan nama yang berbeda."); return;
         }
-        // Cek duplikat penuh (kecualikan diri sendiri)
         if (isDuplikatPengguna(selectedId, nama, alamat)) {
             showAlert("Data pengguna sudah ada! Tidak dapat menyimpan duplikat."); return;
+        }
+
+        Pengguna pengguna = new Pengguna(nama, alamat);
+        if (!pengguna.setNama(nama)) {
+            showAlert("Nama tidak valid!"); return;
+        }
+        if (!pengguna.setAlamat(alamat)) {
+            showAlert("Alamat tidak valid!"); return;
         }
 
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "UPDATE pengguna SET nama=?, alamat=? WHERE id=?");
-            ps.setString(1, nama);
-            ps.setString(2, alamat);
+            ps.setString(1, pengguna.getNama());
+            ps.setString(2, pengguna.getAlamat());
             ps.setInt(3, selectedId);
             ps.executeUpdate();
             loadData();

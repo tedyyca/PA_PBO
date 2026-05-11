@@ -27,6 +27,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 public class TanamanController {
 
@@ -37,7 +38,7 @@ public class TanamanController {
     @FXML private TextArea         taManfaat;
     @FXML private DatePicker       dpTanggal;
     @FXML private Label            lblProperti;
-    @FXML private Label            lblStatusInfo;  // label read-only untuk tampilkan status kalkulasi
+    @FXML private Label            lblStatusInfo;
 
     @FXML private TableView<TanamanRow>              tblTanaman;
     @FXML private TableColumn<TanamanRow, String>    colNama;
@@ -59,7 +60,6 @@ public class TanamanController {
 
         cmbJenis.setOnAction(e -> updateLabelProperti());
 
-        // Update preview status saat tanggal atau jenis berubah
         dpTanggal.valueProperty().addListener((obs, o, n) -> updateStatusPreview());
         cmbJenis.valueProperty().addListener((obs, o, n) -> updateStatusPreview());
 
@@ -106,7 +106,6 @@ public class TanamanController {
         updateStatusPreview();
     }
 
-    /** Tampilkan preview status yang akan dikalkulasi berdasarkan input form saat ini */
     private void updateStatusPreview() {
         LocalDate tgl   = dpTanggal.getValue();
         String    jenis = cmbJenis.getValue();
@@ -151,22 +150,28 @@ public class TanamanController {
             showAlert("Data tanaman sudah ada! Tidak dapat menambahkan duplikat."); return;
         }
 
-        // Hitung status otomatis — SUDAH_DIPANEN tidak mungkin saat pertama tambah
         int estimasi = getEstimasiByJenis(jenis);
         StatusTanaman status = Tanaman.hitungStatus(tanggal, estimasi);
+
+        // Bangun objek model Tanaman untuk validasi (Modul 4 & 5 — Inheritance & Polymorphism)
+        Tanaman tanaman = buildTanamanBaru(nama, latin, manfaat, properti, jenis, status, tanggal);
+        if (!tanaman.setNama(nama) || !tanaman.setNamaLatin(latin) || !tanaman.setManfaat(manfaat)) {
+            showAlert("Data tanaman tidak valid!"); return;
+        }
 
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "INSERT INTO tanaman "
                             + "(nama, nama_latin, manfaat, jenis, properti_tambahan, status, tanggal_tanam) "
                             + "VALUES (?,?,?,?,?,?,?)");
-            ps.setString(1, nama);
-            ps.setString(2, latin);
-            ps.setString(3, manfaat);
-            ps.setString(4, jenis);
-            ps.setString(5, properti);
-            ps.setString(6, status.name());
-            ps.setDate(7, Date.valueOf(tanggal));
+            // Ambil data dari objek model
+            ps.setString(1, tanaman.getNama());
+            ps.setString(2, tanaman.getNamaLatin());
+            ps.setString(3, tanaman.getManfaat());
+            ps.setString(4, tanaman.getJenis());
+            ps.setString(5, tanaman.getPropertiTambahan());
+            ps.setString(6, tanaman.getStatus().name());
+            ps.setDate(7, Date.valueOf(tanaman.getTanggalTanam()));
             ps.executeUpdate();
             loadData();
             clearForm();
@@ -204,14 +209,17 @@ public class TanamanController {
             showAlert("Data tanaman sudah ada! Tidak dapat menyimpan duplikat."); return;
         }
 
-        // Cek apakah tanaman ini sudah dipanen — kalau sudah, jangan recalculate status
         String statusSaatIni = getStatusById(selectedId);
         StatusTanaman statusBaru;
         if ("SUDAH_DIPANEN".equals(statusSaatIni)) {
             statusBaru = StatusTanaman.SUDAH_DIPANEN;
         } else {
-            int estimasi = getEstimasiByJenis(jenis);
-            statusBaru = Tanaman.hitungStatus(tanggal, estimasi);
+            statusBaru = Tanaman.hitungStatus(tanggal, getEstimasiByJenis(jenis));
+        }
+
+        Tanaman tanaman = buildTanamanBaru(nama, latin, manfaat, properti, jenis, statusBaru, tanggal);
+        if (!tanaman.setNama(nama) || !tanaman.setNamaLatin(latin) || !tanaman.setManfaat(manfaat)) {
+            showAlert("Data tanaman tidak valid!"); return;
         }
 
         try (Connection conn = DBConnection.getConnection()) {
@@ -220,13 +228,13 @@ public class TanamanController {
                             + "SET nama=?, nama_latin=?, manfaat=?, jenis=?, "
                             + "    properti_tambahan=?, status=?, tanggal_tanam=? "
                             + "WHERE id=?");
-            ps.setString(1, nama);
-            ps.setString(2, latin);
-            ps.setString(3, manfaat);
-            ps.setString(4, jenis);
-            ps.setString(5, properti);
-            ps.setString(6, statusBaru.name());
-            ps.setDate(7, Date.valueOf(tanggal));
+            ps.setString(1, tanaman.getNama());
+            ps.setString(2, tanaman.getNamaLatin());
+            ps.setString(3, tanaman.getManfaat());
+            ps.setString(4, tanaman.getJenis());
+            ps.setString(5, tanaman.getPropertiTambahan());
+            ps.setString(6, tanaman.getStatus().name());
+            ps.setDate(7, Date.valueOf(tanaman.getTanggalTanam()));
             ps.setInt(8, selectedId);
             ps.executeUpdate();
             loadData();
@@ -342,44 +350,72 @@ public class TanamanController {
         return false;
     }
 
-    private Tanaman buildTanamanFromRow(TanamanRow row) {
-        LocalDate     tgl = (row.getTanggalTanam() != null) ? row.getTanggalTanam() : LocalDate.now();
-        StatusTanaman st  = StatusTanaman.valueOf(row.getStatus());
-        switch (row.getJenis()) {
-            case "Tanaman Rempah":
-                return new TanamanRempah(row.getNama(), row.getNamaLatin(),
-                        row.getManfaat(), row.getProperti(), st, tgl);
-            case "Tanaman Daun":
-                return new TanamanDaun(row.getNama(), row.getNamaLatin(),
-                        row.getManfaat(), row.getProperti(), st, tgl);
-            default:
-                return new TanamanBuah(row.getNama(), row.getNamaLatin(),
-                        row.getManfaat(), row.getProperti(), st, tgl);
-        }
-    }
-
     private void loadData() {
-        data.clear();
+        ArrayList<Tanaman> listTanaman = new ArrayList<>();
+
         try (Connection conn = DBConnection.getConnection()) {
             ResultSet rs = conn.createStatement()
                     .executeQuery("SELECT * FROM tanaman ORDER BY nama");
             while (rs.next()) {
-                LocalDate tgl = (rs.getDate("tanggal_tanam") != null)
-                        ? rs.getDate("tanggal_tanam").toLocalDate() : null;
-                data.add(new TanamanRow(
-                        rs.getInt("id"),
-                        rs.getString("nama"),
-                        rs.getString("jenis"),
-                        rs.getString("nama_latin"),
-                        rs.getString("manfaat"),
-                        rs.getString("properti_tambahan"),
-                        rs.getString("status"),
-                        tgl));
+                LocalDate tgl = rs.getDate("tanggal_tanam") != null
+                        ? rs.getDate("tanggal_tanam").toLocalDate() : LocalDate.now();
+                StatusTanaman st = StatusTanaman.valueOf(rs.getString("status"));
+                String jenis     = rs.getString("jenis");
+                String nama      = rs.getString("nama");
+                String latin     = rs.getString("nama_latin");
+                String manfaat   = rs.getString("manfaat");
+                String properti  = rs.getString("properti_tambahan");
+
+                // Polymorphism — variabel tipe Tanaman menampung subclass yang sesuai (Modul 5)
+                Tanaman t;
+                switch (jenis) {
+                    case "Tanaman Rempah":
+                        t = new TanamanRempah(nama, latin, manfaat, properti, st, tgl); break;
+                    case "Tanaman Daun":
+                        t = new TanamanDaun(nama, latin, manfaat, properti, st, tgl); break;
+                    default:
+                        t = new TanamanBuah(nama, latin, manfaat, properti, st, tgl); break;
+                }
+                t.setId(rs.getInt("id"));
+                listTanaman.add(t);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        data.clear();
+        for (Tanaman t : listTanaman) {
+            data.add(new TanamanRow(
+                    t.getId(),
+                    t.getNama(),
+                    t.getJenis(),
+                    t.getNamaLatin(),
+                    t.getManfaat(),
+                    t.getPropertiTambahan(),
+                    t.getStatus().name(),
+                    t.getTanggalTanam()));
+        }
         tblTanaman.setItems(data);
+    }
+
+    private Tanaman buildTanamanBaru(String nama, String latin, String manfaat,
+                                     String properti, String jenis,
+                                     StatusTanaman status, LocalDate tanggal) {
+        switch (jenis) {
+            case "Tanaman Rempah":
+                return new TanamanRempah(nama, latin, manfaat, properti, status, tanggal);
+            case "Tanaman Daun":
+                return new TanamanDaun(nama, latin, manfaat, properti, status, tanggal);
+            default:
+                return new TanamanBuah(nama, latin, manfaat, properti, status, tanggal);
+        }
+    }
+
+    private Tanaman buildTanamanFromRow(TanamanRow row) {
+        LocalDate     tgl = row.getTanggalTanam() != null ? row.getTanggalTanam() : LocalDate.now();
+        StatusTanaman st  = StatusTanaman.valueOf(row.getStatus());
+        return buildTanamanBaru(row.getNama(), row.getNamaLatin(), row.getManfaat(),
+                row.getProperti(), row.getJenis(), st, tgl);
     }
 
     private void clearForm() {
@@ -424,13 +460,13 @@ public class TanamanController {
             this.tanggalTanam = tanggalTanam;
         }
 
-        public int       getId()            { return id; }
-        public String    getNama()          { return nama; }
-        public String    getJenis()         { return jenis; }
-        public String    getNamaLatin()     { return namaLatin; }
-        public String    getManfaat()       { return manfaat; }
-        public String    getProperti()      { return properti; }
-        public String    getStatus()        { return status; }
-        public LocalDate getTanggalTanam()  { return tanggalTanam; }
+        public int       getId()           { return id; }
+        public String    getNama()         { return nama; }
+        public String    getJenis()        { return jenis; }
+        public String    getNamaLatin()    { return namaLatin; }
+        public String    getManfaat()      { return manfaat; }
+        public String    getProperti()     { return properti; }
+        public String    getStatus()       { return status; }
+        public LocalDate getTanggalTanam() { return tanggalTanam; }
     }
 }
