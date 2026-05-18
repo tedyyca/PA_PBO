@@ -1,18 +1,23 @@
 package com.toga.controller;
 
-import com.toga.config.DBConnection;
+import com.toga.repository.impl.DashboardRepositoryImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-
-import java.sql.*;
+import com.toga.config.DBConnection;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 public class DashboardController {
-
     @FXML private Label lblTotalTanaman;
     @FXML private Label lblSiapPanen;
     @FXML private Label lblTotalPengguna;
@@ -20,10 +25,11 @@ public class DashboardController {
     @FXML private Label lblJmlRempah;
     @FXML private Label lblJmlDaun;
     @FXML private Label lblJmlBuah;
-
-    @FXML private TableView<PanenRow>           tblMendekatiPanen;
+    @FXML private TableView<PanenRow> tblMendekatiPanen;
     @FXML private TableColumn<PanenRow, String> colNama;
     @FXML private TableColumn<PanenRow, String> colSisa;
+
+    private final DashboardRepositoryImpl repo = new DashboardRepositoryImpl();
 
     @FXML
     public void initialize() {
@@ -33,55 +39,33 @@ public class DashboardController {
     }
 
     private void loadDashboard() {
-        try (Connection conn = DBConnection.getConnection()) {
-            if (conn == null) return;
-
-            ResultSet rs1 = conn.createStatement()
-                    .executeQuery("SELECT COUNT(*) FROM tanaman");
-            if (rs1.next()) lblTotalTanaman.setText(String.valueOf(rs1.getInt(1)));
-
-            ResultSet rs2 = conn.createStatement()
-                    .executeQuery("SELECT COUNT(*) FROM pengguna");
-            if (rs2.next()) lblTotalPengguna.setText(String.valueOf(rs2.getInt(1)));
-
-            ResultSet rs3 = conn.createStatement().executeQuery(
-                    "SELECT COUNT(*) FROM jadwal_perawatan "
-                    + "WHERE tanggal = CURDATE() AND sudah_dilakukan = FALSE");
-            if (rs3.next()) lblJadwalHariIni.setText(String.valueOf(rs3.getInt(1)));
-
-            ResultSet rs4 = conn.createStatement().executeQuery(
-                    "SELECT COUNT(*) FROM tanaman WHERE jenis = 'Tanaman Rempah'");
-            if (rs4.next()) lblJmlRempah.setText(rs4.getInt(1) + " tanaman");
-
-            ResultSet rs5 = conn.createStatement().executeQuery(
-                    "SELECT COUNT(*) FROM tanaman WHERE jenis = 'Tanaman Daun'");
-            if (rs5.next()) lblJmlDaun.setText(rs5.getInt(1) + " tanaman");
-
-            ResultSet rs6 = conn.createStatement().executeQuery(
-                    "SELECT COUNT(*) FROM tanaman WHERE jenis = 'Tanaman Buah'");
-            if (rs6.next()) lblJmlBuah.setText(rs6.getInt(1) + " tanaman");
-
-            loadMendekatiPanen(conn);
-
+        try {
+            lblTotalTanaman.setText(String.valueOf(repo.getCount("SELECT COUNT(*) FROM tanaman")));
+            lblTotalPengguna.setText(String.valueOf(repo.getCount("SELECT COUNT(*) FROM pengguna")));
+            lblJadwalHariIni.setText(String.valueOf(repo.getCount("SELECT COUNT(*) FROM jadwal_perawatan WHERE tanggal = CURDATE() AND sudah_dilakukan = FALSE")));
+            lblJmlRempah.setText(repo.getCount("SELECT COUNT(*) FROM tanaman WHERE jenis = 'Tanaman Rempah'") + " tanaman");
+            lblJmlDaun.setText(repo.getCount("SELECT COUNT(*) FROM tanaman WHERE jenis = 'Tanaman Daun'") + " tanaman");
+            lblJmlBuah.setText(repo.getCount("SELECT COUNT(*) FROM tanaman WHERE jenis = 'Tanaman Buah'") + " tanaman");
+            loadMendekatiPanen();
         } catch (Exception e) {
-            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Gagal memuat dashboard: " + e.getMessage(), ButtonType.OK).showAndWait();
         }
     }
 
-    private void loadMendekatiPanen(Connection conn) throws Exception {
+    private void loadMendekatiPanen() throws Exception {
         ObservableList<PanenRow> list = FXCollections.observableArrayList();
-        // Ambil estimasi_hari langsung dari DB, bukan hardcode
-        ResultSet rs = conn.createStatement().executeQuery(
-                "SELECT nama, tanggal_tanam, estimasi_hari FROM tanaman "
-                + "WHERE status != 'SUDAH_DIPANEN'");
-        while (rs.next()) {
-            String    nama     = rs.getString("nama");
-            LocalDate tanam    = rs.getDate("tanggal_tanam").toLocalDate();
-            int       estimasi = rs.getInt("estimasi_hari");
-            LocalDate panen    = tanam.plusDays(estimasi);
-            long      sisa     = ChronoUnit.DAYS.between(LocalDate.now(), panen);
-            if (sisa >= 0 && sisa <= 30) {
-                list.add(new PanenRow(nama, sisa + " hari"));
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT nama, tanggal_tanam, estimasi_hari FROM tanaman WHERE status != 'SUDAH_DIPANEN'")) {
+            while (rs.next()) {
+                String nama = rs.getString("nama");
+                LocalDate tanam = rs.getDate("tanggal_tanam").toLocalDate();
+                int estimasi = rs.getInt("estimasi_hari");
+                LocalDate panen = tanam.plusDays(estimasi);
+                long sisa = ChronoUnit.DAYS.between(LocalDate.now(), panen);
+                if (sisa >= 0 && sisa <= 30) {
+                    list.add(new PanenRow(nama, sisa + " hari"));
+                }
             }
         }
         lblSiapPanen.setText(String.valueOf(list.size()));
@@ -93,7 +77,6 @@ public class DashboardController {
         private final String sisa;
         public PanenRow(String nama, String sisa) { this.nama = nama; this.sisa = sisa; }
         public String getNama() { return nama; }
-        @SuppressWarnings("unused")
         public String getSisa() { return sisa; }
     }
 }
